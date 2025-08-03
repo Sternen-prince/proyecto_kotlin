@@ -27,6 +27,10 @@ interface UsuarioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(usuario: UsuarioEntity)
 
+    //Buscar por rut
+    @Query("SELECT * FROM usuarios WHERE rut = :rut LIMIT 1")
+    suspend fun findByRut(rut: String): UsuarioEntity?
+
     // Eliminar usuario
     @Delete
     suspend fun deleteUser(usuario: UsuarioEntity)
