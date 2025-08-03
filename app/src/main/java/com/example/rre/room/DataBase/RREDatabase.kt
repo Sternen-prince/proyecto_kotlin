@@ -15,7 +15,8 @@ import com.example.rre.room.entities.UsuarioEntity
 
 @Database(
     entities = [UsuarioEntity::class, NotificacionEntity::class, ComentarioEntity::class, PublicacionEntity::class], 
-    version = 5
+    version = 5,
+    exportSchema = false
 )
 abstract class RREDatabase : RoomDatabase() {
 

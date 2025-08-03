@@ -81,7 +81,7 @@ class PublicacionViewModel(
         return ValidationResult(true)
     }
 
-    fun publicarAviso(autorPublicacion: String) {
+    fun publicarAviso(autorId: Int, autorNombre: String) {
         _isLoading.value = true
 
         val publicacion = Publicacion(
@@ -89,43 +89,42 @@ class PublicacionViewModel(
             tipoAviso = _tipoAviso.value ?: "",
             descripcion = _descripcion.value ?: "",
             lugar = _lugar.value ?: "",
-            autor = autorPublicacion,
+            autor = autorNombre, // El objeto de UI puede seguir usando el nombre
             fecha = obtenerFechaActual(),
             photo = _imagenUri.value ?: ""
         )
 
-        // Guardar en base de datos si está disponible el repositorio
         if (publicacionRepository != null) {
-            guardarEnBaseDatos(publicacion, autorPublicacion)
+            // Pasamos ambos datos a la función que guarda
+            guardarEnBaseDatos(publicacion, autorId, autorNombre)
         } else {
-            // Fallback: guardar en memoria
             simularGuardado(publicacion)
         }
     }
 
-    private fun guardarEnBaseDatos(publicacion: Publicacion, autorPublicacion: String) {
+    // --- CAMBIO CLAVE 2: Esta función ahora recibe el autorId (Int) ---
+    private fun guardarEnBaseDatos(publicacion: Publicacion, autorId: Int, autorNombre: String) {
         viewModelScope.launch {
             try {
-                // Guardar en base de datos
+                // --- CAMBIO CLAVE 3: La llamada al repositorio ahora usa 'autorId' ---
                 val publicacionId = publicacionRepository!!.crearPublicacion(
                     titulo = publicacion.titulo,
                     tipoAviso = publicacion.tipoAviso,
                     descripcion = publicacion.descripcion,
                     lugar = publicacion.lugar,
                     imagenUri = publicacion.photo,
-                    autor = publicacion.autor
+                    autorId = autorId // <-- ¡LA LÍNEA CORREGIDA!
                 )
 
-                // Crear notificación
                 notificacionRepository?.crearNotificacionNuevaPublicacion(
-                    autorPublicacion = autorPublicacion,
+                    autorPublicacion = autorNombre, // La notificación usa el nombre
                     tituloPublicacion = publicacion.titulo
                 )
-                
+
                 _isLoading.value = false
                 _publicacionExitosa.value = true
                 limpiarFormulario()
-                
+
             } catch (e: Exception) {
                 _isLoading.value = false
                 _errorMessage.value = "Error al guardar publicación: ${e.message}"

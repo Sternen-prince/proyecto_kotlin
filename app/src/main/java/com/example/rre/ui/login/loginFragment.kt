@@ -46,20 +46,31 @@ class loginFragment : Fragment() {
         }
 
         binding.buttonRegistrarse.setOnClickListener {
-            // Navegar a RegisterFragment
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
 
-        viewModel.loginSuccess.observe(viewLifecycleOwner) { success ->
-            if (success) {
-                // Guardar correo en MainActivity
-                val correoLogeado = viewModel.username.value ?: ""
-                Log.d("LoginFragment", "Correo logeado: $correoLogeado")
-                (requireActivity() as MainActivity).setCorreoUsuarioLogeado(correoLogeado.toString())
+        // --- BLOQUE DE OBSERVADORES COMPLETAMENTE NUEVO ---
 
+        // Observador para el caso de ÉXITO (cuando el usuario no es nulo)
+        viewModel.usuarioLogeado.observe(viewLifecycleOwner) { usuario ->
+            if (usuario != null) {
+                // Éxito. Guardamos el objeto UsuarioEntity completo en MainActivity.
+                Log.d("LoginFragment", "Login exitoso para: ${usuario.nombre}")
+                (requireActivity() as MainActivity).setUsuarioLogeado(usuario)
+
+                // Navegamos a la pantalla de inicio
                 findNavController().navigate(R.id.navigation_home)
-            } else {
-                Toast.makeText(requireContext(), "Usuario o contraseña incorrecta", Toast.LENGTH_SHORT).show()
+            }
+            // Si el usuario es nulo, podría ser un fallo de login.
+            // El siguiente observador manejará el mensaje de error.
+        }
+
+        // Observador para el caso de FRACASO (cuando hay un mensaje de error)
+        viewModel.errorMensaje.observe(viewLifecycleOwner) { mensaje ->
+            mensaje?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                // Limpiamos el error para que el Toast no se muestre de nuevo (ej: al girar la pantalla)
+                viewModel.onMensajeErrorMostrado()
             }
         }
     }

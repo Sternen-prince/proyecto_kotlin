@@ -12,12 +12,14 @@ interface PublicacionDao {
     
     @Query("SELECT * FROM publicaciones ORDER BY fecha DESC")
     suspend fun getAllPublicacionesSync(): List<PublicacionEntity>
-    
-    @Query("SELECT * FROM publicaciones WHERE autor = :autor ORDER BY fecha DESC")
-    fun getPublicacionesPorAutor(autor: String): LiveData<List<PublicacionEntity>>
-    
-    @Query("SELECT * FROM publicaciones WHERE autor = :autor ORDER BY fecha DESC")
-    suspend fun getPublicacionesPorAutorSync(autor: String): List<PublicacionEntity>
+
+    // --- CAMBIO 1: La función ahora busca por el ID del usuario ---
+    @Query("SELECT * FROM publicaciones WHERE autorId = :autorId ORDER BY fecha DESC")
+    fun getPublicacionesPorUsuarioId(autorId: Int): LiveData<List<PublicacionEntity>>
+
+    // --- CAMBIO 2: Versión síncrona de la misma función ---
+    @Query("SELECT * FROM publicaciones WHERE autorId = :autorId ORDER BY fecha DESC")
+    suspend fun getPublicacionesPorUsuarioIdSync(autorId: Int): List<PublicacionEntity>
     
     @Query("SELECT * FROM publicaciones WHERE id = :id")
     suspend fun getPublicacionById(id: Int): PublicacionEntity?

@@ -9,62 +9,65 @@ import androidx.lifecycle.viewModelScope
 import com.example.rre.entidades.Publicacion
 import com.example.rre.repositories.PublicacionRepository
 import com.example.rre.repositories.UsuarioRepository
+import com.example.rre.room.entities.UsuarioEntity
 import kotlinx.coroutines.launch
 
+// --- VIEWMODEL CORREGIDO ---
 class PerfilViewModel(
-    private val usuarioRepository: UsuarioRepository,
+    private val usuarioRepository: UsuarioRepository, // Lo mantenemos por si lo necesitas para futuras funciones
     private val publicacionRepository: PublicacionRepository,
-    private val correoUsuario: String
+    // --- CAMBIO 1: Recibe el objeto UsuarioEntity completo, no un correo ---
+    private val usuario: UsuarioEntity
 ) : ViewModel() {
 
     private val _publicaciones = MutableLiveData<List<Publicacion>>()
     val publicaciones: LiveData<List<Publicacion>> = _publicaciones
 
-    private val _nombre = MutableLiveData<String>()
-    val nombre: LiveData<String> = _nombre
-
-    private val _correo = MutableLiveData<String>()
-    val correo: LiveData<String> = _correo
-
-    private val _telefono = MutableLiveData<String>()
-    val telefono: LiveData<String> = _telefono
+    // --- CAMBIO 2: Los datos del perfil se pueden establecer directamente desde el objeto usuario ---
+    val nombre: LiveData<String> = MutableLiveData(usuario.nombre)
+    val correo: LiveData<String> = MutableLiveData(usuario.correo)
+    val telefono: LiveData<String> = MutableLiveData(usuario.telefono)
 
     init {
-        cargarUsuarioActualYPublicaciones()
+        // La función de inicialización ahora es más simple
+        cargarPublicacionesDelUsuario()
     }
 
-    private fun cargarUsuarioActualYPublicaciones() {
+    // --- CAMBIO 3: La función de carga ha sido completamente reescrita ---
+    private fun cargarPublicacionesDelUsuario() {
         viewModelScope.launch {
-            Log.d("PerfilViewModel", "correoUsuario recibido: $correoUsuario")
-            val usuario = usuarioRepository.obtenerPorCorreo(correoUsuario)
-            Log.d("PerfilViewModel", "Usuario: $usuario")
-            if (usuario != null) {
-                _nombre.value = usuario.nombre
-                _correo.value = usuario.correo
-                _telefono.value = usuario.telefono
+            try {
+                // Ya no necesitamos buscar al usuario. Usamos su ID directamente.
+                Log.d("PerfilViewModel", "Cargando publicaciones para usuario ID: ${usuario.userId}")
 
-                // Cargar publicaciones desde base de datos únicamente
-                val publicacionesDB = publicacionRepository.obtenerPublicacionesPorAutorSync(usuario.nombre)
-                _publicaciones.value = publicacionesDB
-            } else {
-                _nombre.value = "Desconocido"
-                _correo.value = "sin.correo@desconocido.com"
-                _telefono.value = ""
-                _publicaciones.value = emptyList()
+                // Llamamos a la nueva función del repositorio que busca por ID.
+                val publicacionesDeUsuario = publicacionRepository.obtenerPublicacionesPorUsuarioIdSync(usuario.userId)
+
+                _publicaciones.value = publicacionesDeUsuario
+
+                Log.d("PerfilViewModel", "Se encontraron ${publicacionesDeUsuario.size} publicaciones.")
+
+            } catch (e: Exception) {
+                // Manejar cualquier posible error durante la carga
+                Log.e("PerfilViewModel", "Error al cargar las publicaciones", e)
+                _publicaciones.value = emptyList() // En caso de error, mostramos una lista vacía
             }
         }
     }
 }
 
+
+// --- FACTORY CORREGIDA ---
 class PerfilViewModelFactory(
     private val usuarioRepository: UsuarioRepository,
     private val publicacionRepository: PublicacionRepository,
-    private val correoUsuario: String
+    // El parámetro ahora es el objeto completo, como debe ser
+    private val usuario: UsuarioEntity
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PerfilViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PerfilViewModel(usuarioRepository, publicacionRepository, correoUsuario) as T
+            return PerfilViewModel(usuarioRepository, publicacionRepository, usuario) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

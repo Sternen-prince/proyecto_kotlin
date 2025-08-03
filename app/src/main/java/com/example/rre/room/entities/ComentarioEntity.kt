@@ -2,6 +2,7 @@ package com.example.rre.room.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 import androidx.room.ForeignKey
 
 @Entity(
@@ -13,7 +14,8 @@ import androidx.room.ForeignKey
             childColumns = ["notificacionId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["notificacionId"])]
 )
 data class ComentarioEntity(
     @PrimaryKey(autoGenerate = true)
