@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">RRE</string>
+    <string name="title_home">Home</string>
+    <string name="title_notifications">Notificaciones</string>
+    <string name="title_dashboard">Perfil</string>
+
+    <!-- Array para tipos de aviso -->
+    <string-array name="tipos_aviso">
+        <item>Seleccionar tipo de aviso</item>
+        <item>Objeto perdido</item>
+        <item>Objeto encontrado</item>
+    </string-array>
+
+</resources>
