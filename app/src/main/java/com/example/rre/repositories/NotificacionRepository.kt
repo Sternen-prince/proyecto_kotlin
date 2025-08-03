@@ -80,4 +80,21 @@ class NotificacionRepository(private val notificacionDao: NotificacionDao) {
     suspend fun actualizarNotificacion(notificacion: NotificacionEntity) {
         notificacionDao.updateNotificacion(notificacion)
     }
+
+    // Crear notificación cuando alguien comenta
+    suspend fun crearNotificacionComentario(autorComentario: String, tituloPublicacion: String) {
+        val mensaje = "$autorComentario ha comentado la publicación de $tituloPublicacion"
+        val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
+        
+        val notificacion = NotificacionEntity(
+            mensaje = mensaje,
+            tipoNotificacion = "COMENTARIO",
+            autorPublicacion = autorComentario,
+            tituloPublicacion = tituloPublicacion,
+            fecha = fecha,
+            leida = false
+        )
+        
+        notificacionDao.insertNotificacion(notificacion)
+    }
 }

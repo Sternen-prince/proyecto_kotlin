@@ -86,8 +86,8 @@ class MainActivity : AppCompatActivity() {
                         supportActionBar?.setDisplayHomeAsUpEnabled(false)
                         binding.fab.show()
                     }
-                    R.id.publicacionFragment -> {
-                        // En el fragmento de publicación, mostrar la flecha de atrás y ocultar FAB
+                    R.id.publicacionFragment, R.id.detalleNotificacionFragment -> {
+                        // En el fragmento de publicación y detalle, mostrar la flecha de atrás y ocultar FAB
                         supportActionBar?.setDisplayHomeAsUpEnabled(true)
                         binding.fab.hide()
                     }

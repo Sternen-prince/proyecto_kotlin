@@ -28,6 +28,9 @@ interface NotificacionDao {
     @Query("DELETE FROM notificaciones WHERE id = :id")
     suspend fun deleteNotificacion(id: Int)
     
+    @Query("SELECT * FROM notificaciones WHERE id = :id")
+    suspend fun getNotificacionById(id: Int): NotificacionEntity?
+    
     @Query("SELECT COUNT(*) FROM notificaciones WHERE leida = 0")
     suspend fun contarNotificacionesNoLeidas(): Int
 }

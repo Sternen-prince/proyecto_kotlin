@@ -6,7 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.rre.R
 import com.example.rre.adapter.NotificacionAdapter
 import com.example.rre.databinding.FragmentNotificationsBinding
 import com.example.rre.repositories.NotificacionRepository
@@ -104,6 +106,12 @@ class NotificationsFragment : Fragment() {
     private fun onNotificacionClick(notificacion: NotificacionEntity) {
         // Marcar como leída al hacer clic
         notificationsViewModel.marcarComoLeida(notificacion)
+        
+        // Navegar al detalle de la notificación
+        val bundle = Bundle().apply {
+            putInt("notificacionId", notificacion.id)
+        }
+        findNavController().navigate(R.id.detalleNotificacionFragment, bundle)
     }
 
     private fun onEliminarNotificacion(notificacion: NotificacionEntity) {

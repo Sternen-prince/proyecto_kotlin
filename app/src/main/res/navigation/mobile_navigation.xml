@@ -48,6 +48,12 @@
         android:name="com.example.rre.register.RegisterFragment"
         android:label="fragment_register"
         tools:layout="@layout/fragment_register" />
+    
+    <fragment
+        android:id="@+id/detalleNotificacionFragment"
+        android:name="com.example.rre.ui.notifications.DetalleNotificacionFragment"
+        android:label="Detalle Notificación"
+        tools:layout="@layout/fragment_detalle_notificacion" />
 
 
 </navigation>
