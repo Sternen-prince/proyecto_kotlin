@@ -49,8 +49,21 @@ class HomeFragment : Fragment(), OnPublicacionClickListener {
         homeViewModel.publicaciones.observe(viewLifecycleOwner) { publicaciones ->
             listaPublicaciones.clear()
             listaPublicaciones.addAll(publicaciones)
-            publicacionAdapter.notifyDataSetChanged()
+            publicacionAdapter.actualizarLista(publicaciones)
         }
+
+        binding.searchView.setOnQueryTextListener(object :
+            androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                publicacionAdapter.filtrar(query ?: "")
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                publicacionAdapter.filtrar(newText ?: "")
+                return true
+            }
+        })
 
         return root
     }
