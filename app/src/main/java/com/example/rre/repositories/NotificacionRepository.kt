@@ -37,30 +37,6 @@ class NotificacionRepository(private val notificacionDao: NotificacionDao) {
         notificacionDao.insertNotificacion(notificacion)
     }
 
-    // Método para crear notificación de prueba
-    suspend fun crearNotificacionPrueba() {
-        try {
-            val mensaje = "Usuario de Prueba ha publicado un objeto: Objeto de prueba"
-            val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
-            
-            val notificacion = NotificacionEntity(
-                mensaje = mensaje,
-                tipoNotificacion = "PRUEBA",
-                autorPublicacion = "Usuario de Prueba",
-                tituloPublicacion = "Objeto de prueba",
-                fecha = fecha,
-                leida = false
-            )
-            
-            android.util.Log.d("NotificacionRepository", "Creando notificación: $mensaje")
-            notificacionDao.insertNotificacion(notificacion)
-            android.util.Log.d("NotificacionRepository", "Notificación insertada exitosamente")
-        } catch (e: Exception) {
-            android.util.Log.e("NotificacionRepository", "Error insertando notificación", e)
-            throw e
-        }
-    }
-
     // Marcar notificación como leída
     suspend fun marcarComoLeida(id: Int) {
         notificacionDao.marcarComoLeida(id)

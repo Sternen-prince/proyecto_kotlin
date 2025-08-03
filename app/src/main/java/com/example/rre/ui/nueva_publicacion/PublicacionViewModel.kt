@@ -7,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.rre.PublicacionProvider
 import com.example.rre.entidades.Publicacion
 import com.example.rre.repositories.NotificacionRepository
+import com.example.rre.repositories.PublicacionRepository
 import kotlinx.coroutines.launch
 
 data class ValidationResult(val isValid: Boolean, val errorMessage: String? = null)
 
 class PublicacionViewModel(
-    private val notificacionRepository: NotificacionRepository? = null
+    private val notificacionRepository: NotificacionRepository? = null,
+    private val publicacionRepository: PublicacionRepository? = null
 ) : ViewModel() {
 
     private val _titulo = MutableLiveData<String>()
@@ -79,28 +81,59 @@ class PublicacionViewModel(
         return ValidationResult(true)
     }
 
-    fun publicarAviso() {
+    fun publicarAviso(autorPublicacion: String) {
         _isLoading.value = true
-        _errorMessage.value = null
-
-        val validacion = validarFormularioCompleto()
-        if (!validacion.isValid) {
-            _isLoading.value = false
-            _errorMessage.value = validacion.errorMessage
-            return
-        }
 
         val publicacion = Publicacion(
             titulo = _titulo.value ?: "",
-            descripcion = _descripcion.value ?: "",
             tipoAviso = _tipoAviso.value ?: "",
-            fecha = obtenerFechaActual(),
+            descripcion = _descripcion.value ?: "",
             lugar = _lugar.value ?: "",
-            autor = "Armando Fuentes",
+            autor = autorPublicacion,
+            fecha = obtenerFechaActual(),
             photo = _imagenUri.value ?: ""
         )
 
-        simularGuardado(publicacion)
+        // Guardar en base de datos si está disponible el repositorio
+        if (publicacionRepository != null) {
+            guardarEnBaseDatos(publicacion, autorPublicacion)
+        } else {
+            // Fallback: guardar en memoria
+            simularGuardado(publicacion)
+        }
+    }
+
+    private fun guardarEnBaseDatos(publicacion: Publicacion, autorPublicacion: String) {
+        viewModelScope.launch {
+            try {
+                // Guardar en base de datos
+                val publicacionId = publicacionRepository!!.crearPublicacion(
+                    titulo = publicacion.titulo,
+                    tipoAviso = publicacion.tipoAviso,
+                    descripcion = publicacion.descripcion,
+                    lugar = publicacion.lugar,
+                    imagenUri = publicacion.photo,
+                    autor = publicacion.autor
+                )
+
+                // También guardar en memoria para compatibilidad con UI existente
+                PublicacionProvider.publicacionLista.add(publicacion)
+                
+                // Crear notificación
+                notificacionRepository?.crearNotificacionNuevaPublicacion(
+                    autorPublicacion = autorPublicacion,
+                    tituloPublicacion = publicacion.titulo
+                )
+                
+                _isLoading.value = false
+                _publicacionExitosa.value = true
+                limpiarFormulario()
+                
+            } catch (e: Exception) {
+                _isLoading.value = false
+                _errorMessage.value = "Error al guardar publicación: ${e.message}"
+            }
+        }
     }
 
     private fun simularGuardado(publicacion: Publicacion) {

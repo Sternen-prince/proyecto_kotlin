@@ -16,6 +16,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.example.rre.MainActivity
 import com.example.rre.R
 import com.example.rre.databinding.FragmentPublicacionBinding
 
@@ -91,8 +92,9 @@ class PublicacionFragment : Fragment() {
     private fun setupViewModel() {
         try {
             val database = com.example.rre.room.DataBase.RREDatabase.getInstance(requireContext())
-            val repository = com.example.rre.repositories.NotificacionRepository(database.notificacionDao())
-            val factory = PublicacionViewModelFactory(repository)
+            val notificacionRepository = com.example.rre.repositories.NotificacionRepository(database.notificacionDao())
+            val publicacionRepository = com.example.rre.repositories.PublicacionRepository(database.publicacionDao())
+            val factory = PublicacionViewModelFactory(notificacionRepository, publicacionRepository)
             viewModel = ViewModelProvider(this, factory)[PublicacionViewModel::class.java]
         } catch (e: Exception) {
             // Fallback a ViewModel sin repository
@@ -257,7 +259,22 @@ class PublicacionFragment : Fragment() {
             return
         }
 
-        viewModel.publicarAviso()
+        val usuarioActual = obtenerUsuarioActual()
+        if (usuarioActual.isEmpty()) {
+            Toast.makeText(requireContext(), "Error: No se pudo identificar al usuario", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewModel.publicarAviso(usuarioActual)
+    }
+
+    private fun obtenerUsuarioActual(): String {
+        // Obtener usuario del MainActivity
+        return try {
+            (requireActivity() as com.example.rre.MainActivity).getCorreoUsuarioLogeado() ?: "Usuario Anónimo"
+        } catch (e: Exception) {
+            "Usuario Anónimo"
+        }
     }
 
     override fun onDestroyView() {
