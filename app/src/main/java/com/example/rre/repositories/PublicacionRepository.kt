@@ -1,6 +1,7 @@
 package com.example.rre.repositories
 
 import androidx.lifecycle.LiveData
+import com.example.rre.entidades.Publicacion
 import com.example.rre.room.dao.PublicacionDao
 import com.example.rre.room.entities.PublicacionEntity
 import java.text.SimpleDateFormat
@@ -8,14 +9,28 @@ import java.util.*
 
 class PublicacionRepository(private val publicacionDao: PublicacionDao) {
 
-    // Obtener todas las publicaciones
-    fun obtenerTodasLasPublicaciones(): LiveData<List<PublicacionEntity>> {
+    // Obtener todas las publicaciones como LiveData de Entity
+    fun obtenerTodasLasPublicacionesEntity(): LiveData<List<PublicacionEntity>> {
         return publicacionDao.getAllPublicaciones()
+    }
+
+    // Obtener todas las publicaciones como objetos Publicacion para UI
+    suspend fun obtenerTodasLasPublicaciones(): List<Publicacion> {
+        return publicacionDao.getAllPublicacionesSync().map { entity ->
+            convertirEntityAPublicacion(entity)
+        }
     }
 
     // Obtener publicaciones por autor
     fun obtenerPublicacionesPorAutor(autor: String): LiveData<List<PublicacionEntity>> {
         return publicacionDao.getPublicacionesPorAutor(autor)
+    }
+
+    // Obtener publicaciones por autor como objetos Publicacion
+    suspend fun obtenerPublicacionesPorAutorSync(autor: String): List<Publicacion> {
+        return publicacionDao.getPublicacionesPorAutorSync(autor).map { entity ->
+            convertirEntityAPublicacion(entity)
+        }
     }
 
     // Crear nueva publicación
@@ -65,5 +80,18 @@ class PublicacionRepository(private val publicacionDao: PublicacionDao) {
     // Contar publicaciones
     suspend fun contarPublicaciones(): Int {
         return publicacionDao.contarPublicaciones()
+    }
+
+    // Convertir PublicacionEntity a Publicacion para uso en UI
+    private fun convertirEntityAPublicacion(entity: PublicacionEntity): Publicacion {
+        return Publicacion(
+            titulo = entity.titulo,
+            descripcion = entity.descripcion,
+            tipoAviso = entity.tipoAviso,
+            fecha = entity.fecha,
+            lugar = entity.lugar,
+            autor = entity.autor,
+            photo = entity.imagenUri
+        )
     }
 }

@@ -10,8 +10,14 @@ interface PublicacionDao {
     @Query("SELECT * FROM publicaciones ORDER BY fecha DESC")
     fun getAllPublicaciones(): LiveData<List<PublicacionEntity>>
     
+    @Query("SELECT * FROM publicaciones ORDER BY fecha DESC")
+    suspend fun getAllPublicacionesSync(): List<PublicacionEntity>
+    
     @Query("SELECT * FROM publicaciones WHERE autor = :autor ORDER BY fecha DESC")
     fun getPublicacionesPorAutor(autor: String): LiveData<List<PublicacionEntity>>
+    
+    @Query("SELECT * FROM publicaciones WHERE autor = :autor ORDER BY fecha DESC")
+    suspend fun getPublicacionesPorAutorSync(autor: String): List<PublicacionEntity>
     
     @Query("SELECT * FROM publicaciones WHERE id = :id")
     suspend fun getPublicacionById(id: Int): PublicacionEntity?

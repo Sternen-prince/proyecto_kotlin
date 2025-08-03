@@ -7,12 +7,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.rre.entidades.Publicacion
-import com.example.rre.PublicacionProvider
+import com.example.rre.repositories.PublicacionRepository
 import com.example.rre.repositories.UsuarioRepository
 import kotlinx.coroutines.launch
 
 class PerfilViewModel(
     private val usuarioRepository: UsuarioRepository,
+    private val publicacionRepository: PublicacionRepository,
     private val correoUsuario: String
 ) : ViewModel() {
 
@@ -42,8 +43,9 @@ class PerfilViewModel(
                 _correo.value = usuario.correo
                 _telefono.value = usuario.telefono
 
-                val todasPublicaciones = PublicacionProvider.publicacionLista
-                _publicaciones.value = todasPublicaciones.filter { it.autor == usuario.nombre }
+                // Cargar publicaciones desde base de datos únicamente
+                val publicacionesDB = publicacionRepository.obtenerPublicacionesPorAutorSync(usuario.nombre)
+                _publicaciones.value = publicacionesDB
             } else {
                 _nombre.value = "Desconocido"
                 _correo.value = "sin.correo@desconocido.com"
@@ -56,12 +58,13 @@ class PerfilViewModel(
 
 class PerfilViewModelFactory(
     private val usuarioRepository: UsuarioRepository,
+    private val publicacionRepository: PublicacionRepository,
     private val correoUsuario: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PerfilViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PerfilViewModel(usuarioRepository, correoUsuario) as T
+            return PerfilViewModel(usuarioRepository, publicacionRepository, correoUsuario) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

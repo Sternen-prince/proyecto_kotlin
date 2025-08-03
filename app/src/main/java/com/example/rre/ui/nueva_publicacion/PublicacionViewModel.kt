@@ -116,9 +116,6 @@ class PublicacionViewModel(
                     autor = publicacion.autor
                 )
 
-                // También guardar en memoria para compatibilidad con UI existente
-                PublicacionProvider.publicacionLista.add(publicacion)
-                
                 // Crear notificación
                 notificacionRepository?.crearNotificacionNuevaPublicacion(
                     autorPublicacion = autorPublicacion,

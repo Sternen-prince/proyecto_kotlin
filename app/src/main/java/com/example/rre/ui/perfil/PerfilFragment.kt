@@ -13,6 +13,7 @@ import com.example.rre.databinding.FragmentPerfilBinding
 import com.example.rre.entidades.Publicacion
 import com.example.rre.adapter.PublicacionAdapter
 import com.example.rre.OnPublicacionClickListener
+import com.example.rre.repositories.PublicacionRepository
 import com.example.rre.repositories.UsuarioRepository
 import com.example.rre.room.DataBase.RREDatabase
 import com.example.rre.ui.detallespublicacion.PublicacionCompletaActivity
@@ -33,13 +34,13 @@ class PerfilFragment : Fragment() {
         // Obtener el correo del usuario logeado desde la MainActivity
         val correoUsuario = (requireActivity() as MainActivity).getCorreoUsuarioLogeado() ?: ""
 
-        // Crear repositorio
-        val usuarioRepo = UsuarioRepository(
-            RREDatabase.getInstance(requireContext()).usuarioDao()
-        )
+        // Crear repositorios
+        val database = RREDatabase.getInstance(requireContext())
+        val usuarioRepo = UsuarioRepository(database.usuarioDao())
+        val publicacionRepo = PublicacionRepository(database.publicacionDao())
 
         // Crear el ViewModel usando el Factory
-        val factory = PerfilViewModelFactory(usuarioRepo, correoUsuario)
+        val factory = PerfilViewModelFactory(usuarioRepo, publicacionRepo, correoUsuario)
         viewModel = ViewModelProvider(this, factory).get(PerfilViewModel::class.java)
 
         // Inflar binding y conectar ViewModel
