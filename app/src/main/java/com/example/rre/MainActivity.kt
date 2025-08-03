@@ -50,18 +50,21 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
+
                 R.id.navigation_notifications -> {
                     if (navController.currentDestination?.id != R.id.navigation_notifications) {
                         navController.navigate(R.id.navigation_notifications)
                     }
                     true
                 }
+
                 R.id.navigation_dashboard -> {
                     if (navController.currentDestination?.id != R.id.navigation_dashboard) {
                         navController.navigate(R.id.navigation_dashboard)
                     }
                     true
                 }
+
                 else -> false
             }
         }
@@ -71,32 +74,35 @@ class MainActivity : AppCompatActivity() {
         }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.loginFragment) {
+            // Comprueba si el destino es el fragmento de login O el de registro
+            if (destination.id == R.id.loginFragment || destination.id == R.id.registerFragment) { // <-- AÑADE ESTA CONDICIÓN
                 navView.visibility = View.GONE
                 binding.fab.hide()
                 supportActionBar?.hide()
             } else {
                 navView.visibility = View.VISIBLE
                 supportActionBar?.show()
-                
-                // Mostrar/ocultar botón de navegación hacia atrás según el fragmento
+
+                // El resto de tu lógica para mostrar/ocultar el botón de "atrás" y el FAB
                 when (destination.id) {
                     R.id.navigation_home, R.id.navigation_notifications, R.id.navigation_dashboard -> {
-                        // En los fragmentos principales, ocultar la flecha de atrás y mostrar FAB
                         supportActionBar?.setDisplayHomeAsUpEnabled(false)
                         binding.fab.show()
                     }
+
                     R.id.publicacionFragment, R.id.detalleNotificacionFragment -> {
-                        // En el fragmento de publicación y detalle, mostrar la flecha de atrás y ocultar FAB
                         supportActionBar?.setDisplayHomeAsUpEnabled(true)
                         binding.fab.hide()
                     }
+                    // Añade aquí cualquier otra lógica específica si es necesario
                 }
-                
+
                 // Sincronizar el bottom navigation con el destino actual
                 when (destination.id) {
                     R.id.navigation_home -> navView.selectedItemId = R.id.navigation_home
-                    R.id.navigation_notifications -> navView.selectedItemId = R.id.navigation_notifications
+                    R.id.navigation_notifications -> navView.selectedItemId =
+                        R.id.navigation_notifications
+
                     R.id.navigation_dashboard -> navView.selectedItemId = R.id.navigation_dashboard
                 }
             }

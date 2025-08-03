@@ -22,6 +22,10 @@ class UsuarioRepository(private val usuarioDao: UsuarioDao) {
         return usuarioDao.findByCorreo(correo)
     }
 
+    suspend fun obtenerPorRut(rut: String): UsuarioEntity? {
+        return usuarioDao.findByRut(rut)
+    }
+
     // Eliminar usuario
     suspend fun eliminar(usuario: UsuarioEntity) {
         usuarioDao.deleteUser(usuario)
