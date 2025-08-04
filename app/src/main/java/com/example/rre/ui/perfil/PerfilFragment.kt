@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,25 +31,37 @@ class PerfilFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        _binding = FragmentPerfilBinding.inflate(inflater, container, false)
 
-        // Obtener el correo del usuario logeado desde la MainActivity
-        val correoUsuario = (requireActivity() as MainActivity).getCorreoUsuarioLogeado() ?: ""
+        // --- CAMBIO 1: Obtener el objeto UsuarioEntity completo ---
+        val usuarioLogeado = (requireActivity() as MainActivity).getUsuarioLogeado()
 
-        // Crear repositorios
+        // Si por alguna razón el usuario no está logueado, mostramos un error y no continuamos.
+        if (usuarioLogeado == null) {
+            Toast.makeText(requireContext(), "Error: Usuario no encontrado. Por favor, inicie sesión.", Toast.LENGTH_LONG).show()
+            // Aquí podrías navegar a la pantalla de login si quisieras
+            return binding.root // Devolvemos la vista vacía
+        }
+
+        // --- CAMBIO 2: Crear repositorios (esto está bien como lo tienes) ---
         val database = RREDatabase.getInstance(requireContext())
         val usuarioRepo = UsuarioRepository(database.usuarioDao())
         val publicacionRepo = PublicacionRepository(database.publicacionDao())
 
-        // Crear el ViewModel usando el Factory
-        val factory = PerfilViewModelFactory(usuarioRepo, publicacionRepo, correoUsuario)
+        // --- CAMBIO 3: Pasamos el objeto 'usuarioLogeado' completo a la Factory ---
+        val factory = PerfilViewModelFactory(usuarioRepo, publicacionRepo, usuarioLogeado)
         viewModel = ViewModelProvider(this, factory).get(PerfilViewModel::class.java)
 
-        // Inflar binding y conectar ViewModel
-        _binding = FragmentPerfilBinding.inflate(inflater, container, false)
         binding.perfilModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        // Configurar adaptador del RecyclerView
+        setupRecyclerView()
+        setupObservers()
+
+        return binding.root
+    }
+
+    private fun setupRecyclerView() {
         adapter = PublicacionAdapter(emptyList(), object : OnPublicacionClickListener {
             override fun onPublicacionClick(publicacion: Publicacion) {
                 val intent = Intent(requireContext(), PublicacionCompletaActivity::class.java).apply {
@@ -61,16 +74,15 @@ class PerfilFragment : Fragment() {
                 startActivity(intent)
             }
         })
-
         binding.recyclerViewPerfil.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewPerfil.adapter = adapter
+    }
 
+    private fun setupObservers() {
         // Observar publicaciones
-        viewModel.publicaciones.observe(viewLifecycleOwner) {
-            adapter.actualizarLista(it)
+        viewModel.publicaciones.observe(viewLifecycleOwner) { listaPublicaciones ->
+            adapter.actualizarLista(listaPublicaciones)
         }
-
-        return binding.root
     }
 
     override fun onDestroyView() {

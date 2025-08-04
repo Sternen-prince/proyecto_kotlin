@@ -19,6 +19,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.rre.MainActivity
 import com.example.rre.R
 import com.example.rre.databinding.FragmentPublicacionBinding
+import com.example.rre.room.entities.UsuarioEntity // <-- Importamos UsuarioEntity
 
 class PublicacionFragment : Fragment() {
 
@@ -77,15 +78,13 @@ class PublicacionFragment : Fragment() {
 
         binding.spinnerTipoAviso.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (position > 0) { // No actualizar si es la primera opción (placeholder)
+                if (position > 0) {
                     val tipoSeleccionado = parent?.getItemAtPosition(position).toString()
                     viewModel.actualizarTipoAviso(tipoSeleccionado)
                 }
             }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                // No hacer nada
-            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
 
@@ -94,23 +93,22 @@ class PublicacionFragment : Fragment() {
             val database = com.example.rre.room.DataBase.RREDatabase.getInstance(requireContext())
             val notificacionRepository = com.example.rre.repositories.NotificacionRepository(database.notificacionDao())
             val publicacionRepository = com.example.rre.repositories.PublicacionRepository(database.publicacionDao())
+            // Suponiendo que tienes una PublicacionViewModelFactory que acepta los repositorios
             val factory = PublicacionViewModelFactory(notificacionRepository, publicacionRepository)
             viewModel = ViewModelProvider(this, factory)[PublicacionViewModel::class.java]
         } catch (e: Exception) {
-            // Fallback a ViewModel sin repository
             viewModel = ViewModelProvider(this)[PublicacionViewModel::class.java]
         }
     }
 
     private fun configurarObservadores() {
+        // ... (Tu código de observadores no necesita cambios)
         viewModel.titulo.observe(viewLifecycleOwner) { titulo ->
             if (binding.etTitulo.text.toString() != titulo) {
                 binding.etTitulo.setText(titulo)
             }
         }
-
         viewModel.tipoAviso.observe(viewLifecycleOwner) { tipo ->
-            // Buscar la posición del tipo en el spinner
             val adapter = binding.spinnerTipoAviso.adapter
             for (i in 0 until adapter.count) {
                 if (adapter.getItem(i).toString() == tipo) {
@@ -121,19 +119,16 @@ class PublicacionFragment : Fragment() {
                 }
             }
         }
-
         viewModel.descripcion.observe(viewLifecycleOwner) { descripcion ->
             if (binding.etDescripcion.text.toString() != descripcion) {
                 binding.etDescripcion.setText(descripcion)
             }
         }
-
         viewModel.lugar.observe(viewLifecycleOwner) { lugar ->
             if (binding.etLugar.text.toString() != lugar) {
                 binding.etLugar.setText(lugar)
             }
         }
-
         viewModel.imagenUri.observe(viewLifecycleOwner) { uriString ->
             if (!uriString.isNullOrEmpty()) {
                 val uri = Uri.parse(uriString)
@@ -145,69 +140,44 @@ class PublicacionFragment : Fragment() {
                 binding.llPlaceholderImagen.visibility = View.VISIBLE
             }
         }
-
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.btnPublicar.isEnabled = !isLoading
             binding.btnPublicar.text = if (isLoading) "Publicando..." else "Publicar"
         }
-
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             error?.let {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
                 viewModel.limpiarError()
             }
         }
-
         viewModel.publicacionExitosa.observe(viewLifecycleOwner) { exitosa ->
             if (exitosa) {
                 Toast.makeText(requireContext(), "¡Publicación creada exitosamente!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_publicacionFragment_to_FirstFragment)
+                // Navegar a la pantalla principal
+                findNavController().popBackStack(R.id.navigation_home, false)
                 viewModel.resetearEstadoExito()
             }
         }
     }
 
     private fun configurarListeners() {
-        binding.etTitulo.addTextChangedListener { text ->
-            viewModel.actualizarTitulo(text.toString())
-        }
-
-        // El listener del spinner ya está configurado en configurarSpinnerTipoAviso()
-
-        binding.etDescripcion.addTextChangedListener { text ->
-            viewModel.actualizarDescripcion(text.toString())
-        }
-
-        binding.etLugar.addTextChangedListener { text ->
-            viewModel.actualizarLugar(text.toString())
-        }
-
-        binding.btnCancelar.setOnClickListener {
-            findNavController().navigate(R.id.action_publicacionFragment_to_FirstFragment)
-        }
-
-        binding.btnPublicar.setOnClickListener {
-            publicarAviso()
-        }
+        // ... (Tu código de listeners no necesita cambios)
+        binding.etTitulo.addTextChangedListener { text -> viewModel.actualizarTitulo(text.toString()) }
+        binding.etDescripcion.addTextChangedListener { text -> viewModel.actualizarDescripcion(text.toString()) }
+        binding.etLugar.addTextChangedListener { text -> viewModel.actualizarLugar(text.toString()) }
+        binding.btnCancelar.setOnClickListener { findNavController().popBackStack() }
+        binding.btnPublicar.setOnClickListener { publicarAviso() }
     }
 
     private fun configurarSeleccionImagen() {
-        binding.btnSeleccionarImagen.setOnClickListener {
-            seleccionarImagenLauncher.launch("image/*")
-        }
-
+        // ... (Tu código de selección de imagen no necesita cambios)
+        binding.btnSeleccionarImagen.setOnClickListener { seleccionarImagenLauncher.launch("image/*") }
         binding.btnTomarFoto.setOnClickListener {
             fotoUriTemp = crearImagenTempUri(requireContext())
-            fotoUriTemp?.let { uri ->
-                tomarFotoLauncher.launch(uri)
-            } ?: run {
-                Toast.makeText(requireContext(), "No se pudo crear archivo para la foto", Toast.LENGTH_SHORT).show()
-            }
+            fotoUriTemp?.let { uri -> tomarFotoLauncher.launch(uri) }
+                ?: run { Toast.makeText(requireContext(), "No se pudo crear archivo para la foto", Toast.LENGTH_SHORT).show() }
         }
-
-        binding.llPlaceholderImagen.setOnClickListener {
-            seleccionarImagenLauncher.launch("image/*")
-        }
+        binding.llPlaceholderImagen.setOnClickListener { seleccionarImagenLauncher.launch("image/*") }
     }
 
     private fun crearImagenTempUri(context: Context): Uri? {
@@ -219,6 +189,7 @@ class PublicacionFragment : Fragment() {
         return contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
     }
 
+    // --- FUNCIÓN CORREGIDA ---
     private fun publicarAviso() {
         binding.etTitulo.error = null
         binding.etDescripcion.error = null
@@ -234,9 +205,7 @@ class PublicacionFragment : Fragment() {
 
         val tipoAviso = if (binding.spinnerTipoAviso.selectedItemPosition > 0) {
             binding.spinnerTipoAviso.selectedItem.toString()
-        } else {
-            ""
-        }
+        } else { "" }
         val validacionTipo = viewModel.validarTipoAviso(tipoAviso)
         if (!validacionTipo.isValid) {
             Toast.makeText(requireContext(), validacionTipo.errorMessage, Toast.LENGTH_SHORT).show()
@@ -260,20 +229,24 @@ class PublicacionFragment : Fragment() {
         }
 
         val usuarioActual = obtenerUsuarioActual()
-        if (usuarioActual.isEmpty()) {
-            Toast.makeText(requireContext(), "Error: No se pudo identificar al usuario", Toast.LENGTH_SHORT).show()
+        if (usuarioActual == null) {
+            Toast.makeText(requireContext(), "Error: No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.", Toast.LENGTH_LONG).show()
             return
         }
 
-        viewModel.publicarAviso(usuarioActual)
+        // Llamamos a la nueva función del ViewModel con los parámetros correctos
+        viewModel.publicarAviso(
+            autorId = usuarioActual.userId,
+            autorNombre = usuarioActual.nombre
+        )
     }
 
-    private fun obtenerUsuarioActual(): String {
-        // Obtener usuario del MainActivity
+    // --- FUNCIÓN CORREGIDA ---
+    private fun obtenerUsuarioActual(): UsuarioEntity? {
         return try {
-            (requireActivity() as com.example.rre.MainActivity).getCorreoUsuarioLogeado() ?: "Usuario Anónimo"
+            (requireActivity() as MainActivity).getUsuarioLogeado()
         } catch (e: Exception) {
-            "Usuario Anónimo"
+            null
         }
     }
 

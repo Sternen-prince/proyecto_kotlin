@@ -16,44 +16,46 @@ class PublicacionRepository(private val publicacionDao: PublicacionDao) {
 
     // Obtener todas las publicaciones como objetos Publicacion para UI
     suspend fun obtenerTodasLasPublicaciones(): List<Publicacion> {
+        // AVISO: La conversión a 'Publicacion' ahora necesita el nombre del autor.
+        // Esto debería manejarse en el ViewModel. Por ahora, el nombre del autor quedará en blanco.
         return publicacionDao.getAllPublicacionesSync().map { entity ->
             convertirEntityAPublicacion(entity)
         }
     }
 
-    // Obtener publicaciones por autor
-    fun obtenerPublicacionesPorAutor(autor: String): LiveData<List<PublicacionEntity>> {
-        return publicacionDao.getPublicacionesPorAutor(autor)
+    // --- CORREGIDO: Busca por ID de usuario y devuelve LiveData ---
+    fun obtenerPublicacionesPorUsuarioId(autorId: Int): LiveData<List<PublicacionEntity>> {
+        return publicacionDao.getPublicacionesPorUsuarioId(autorId)
     }
 
-    // Obtener publicaciones por autor como objetos Publicacion
-    suspend fun obtenerPublicacionesPorAutorSync(autor: String): List<Publicacion> {
-        return publicacionDao.getPublicacionesPorAutorSync(autor).map { entity ->
+    // --- CORREGIDO: Versión síncrona que busca por ID de usuario ---
+    suspend fun obtenerPublicacionesPorUsuarioIdSync(autorId: Int): List<Publicacion> {
+        return publicacionDao.getPublicacionesPorUsuarioIdSync(autorId).map { entity ->
             convertirEntityAPublicacion(entity)
         }
     }
 
-    // Crear nueva publicación
+    // --- CORREGIDO: Ahora recibe el autorId (Int) en lugar del nombre (String) ---
     suspend fun crearPublicacion(
         titulo: String,
         tipoAviso: String,
         descripcion: String,
         lugar: String,
         imagenUri: String,
-        autor: String
+        autorId: Int // <-- CAMBIO CLAVE
     ): Long {
         val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
-        
+
         val publicacion = PublicacionEntity(
             titulo = titulo,
             tipoAviso = tipoAviso,
             descripcion = descripcion,
             lugar = lugar,
             imagenUri = imagenUri,
-            autor = autor,
+            autorId = autorId, // <-- CAMBIO CLAVE
             fecha = fecha
         )
-        
+
         return publicacionDao.insertPublicacion(publicacion)
     }
 
@@ -82,7 +84,7 @@ class PublicacionRepository(private val publicacionDao: PublicacionDao) {
         return publicacionDao.contarPublicaciones()
     }
 
-    // Convertir PublicacionEntity a Publicacion para uso en UI
+    // --- CORREGIDO: Función de conversión ---
     private fun convertirEntityAPublicacion(entity: PublicacionEntity): Publicacion {
         return Publicacion(
             titulo = entity.titulo,
@@ -90,7 +92,11 @@ class PublicacionRepository(private val publicacionDao: PublicacionDao) {
             tipoAviso = entity.tipoAviso,
             fecha = entity.fecha,
             lugar = entity.lugar,
-            autor = entity.autor,
+            // AVISO IMPORTANTE:
+            // La entidad ya no guarda el nombre del autor, solo su ID.
+            // Para mostrar el nombre en la UI, deberás buscarlo en el ViewModel usando el 'autorId'.
+            // Por ahora, lo dejamos como "Autor Desconocido" para que compile.
+            autor = "Autor (ID: ${entity.autorId})",
             photo = entity.imagenUri
         )
     }

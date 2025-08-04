@@ -16,6 +16,7 @@ import com.example.rre.repositories.NotificacionRepository
 import com.example.rre.room.DataBase.RREDatabase
 import com.example.rre.room.entities.ComentarioEntity
 import com.example.rre.room.entities.NotificacionEntity
+import com.example.rre.room.entities.UsuarioEntity // <-- Importamos UsuarioEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ class DetalleNotificacionFragment : Fragment() {
 
     private var _binding: FragmentDetalleNotificacionBinding? = null
     private val binding get() = _binding!!
-    
+
     private lateinit var comentarioAdapter: ComentarioDetalleAdapter
     private lateinit var notificacionRepository: NotificacionRepository
     private var notificacion: NotificacionEntity? = null
@@ -43,15 +44,15 @@ class DetalleNotificacionFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        // Obtener ID de la notificación de los argumentos
+
         notificacionId = arguments?.getInt("notificacionId", -1) ?: -1
-        
+
         if (notificacionId == -1) {
             Toast.makeText(requireContext(), "Error: No se encontró la notificación", Toast.LENGTH_SHORT).show()
+            findNavController().navigateUp()
             return
         }
-        
+
         setupRepository()
         setupRecyclerView()
         setupListeners()
@@ -74,12 +75,12 @@ class DetalleNotificacionFragment : Fragment() {
     private fun setupListeners() {
         binding.btnComentar.setOnClickListener {
             val contenidoComentario = binding.etNuevoComentario.text.toString().trim()
-            
+
             if (contenidoComentario.isEmpty()) {
                 Toast.makeText(requireContext(), "Por favor escribe un comentario", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            
+
             agregarComentario(contenidoComentario)
         }
     }
@@ -89,19 +90,18 @@ class DetalleNotificacionFragment : Fragment() {
             try {
                 val database = RREDatabase.getInstance(requireContext())
                 val notificacionEncontrada = database.notificacionDao().getNotificacionById(notificacionId)
-                
+
                 CoroutineScope(Dispatchers.Main).launch {
                     notificacionEncontrada?.let { notif ->
                         notificacion = notif
                         mostrarDatosNotificacion(notif)
-                        
-                        // Observar comentarios en el hilo principal
+
                         database.comentarioDao().getComentariosPorNotificacion(notificacionId).observe(viewLifecycleOwner) { comentarios ->
                             comentarioAdapter.actualizarComentarios(comentarios)
                         }
                     }
                 }
-                
+
             } catch (e: Exception) {
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(requireContext(), "Error al cargar datos: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -116,11 +116,12 @@ class DetalleNotificacionFragment : Fragment() {
         binding.tvFechaNotificacion.text = notificacion.fecha
     }
 
+    // --- FUNCIÓN CORREGIDA ---
     private fun agregarComentario(contenido: String) {
         val usuarioActual = obtenerUsuarioActual()
-        
-        if (usuarioActual.isEmpty()) {
-            Toast.makeText(requireContext(), "Error: No se pudo identificar al usuario", Toast.LENGTH_SHORT).show()
+
+        if (usuarioActual == null) {
+            Toast.makeText(requireContext(), "Error: Debes iniciar sesión para comentar", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -128,34 +129,29 @@ class DetalleNotificacionFragment : Fragment() {
             try {
                 val database = RREDatabase.getInstance(requireContext())
                 val fechaActual = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
-                
-                // Crear nuevo comentario
+
                 val nuevoComentario = ComentarioEntity(
                     notificacionId = notificacionId,
-                    autorComentario = usuarioActual,
+                    autorComentario = usuarioActual.nombre, // <-- Usamos el nombre del usuario
                     contenidoComentario = contenido,
                     fechaComentario = fechaActual
                 )
-                
+
                 database.comentarioDao().insertComentario(nuevoComentario)
-                
-                // Crear notificación sobre el comentario
+
                 notificacion?.let { notif ->
-                    val mensajeNotificacion = "$usuarioActual ha comentado la publicación de ${notif.tituloPublicacion}"
                     notificacionRepository.crearNotificacionComentario(
-                        autorComentario = usuarioActual,
+                        autorComentario = usuarioActual.nombre, // <-- Usamos el nombre del usuario
                         tituloPublicacion = notif.tituloPublicacion
                     )
                 }
-                
+
                 CoroutineScope(Dispatchers.Main).launch {
                     binding.etNuevoComentario.setText("")
                     Toast.makeText(requireContext(), "Comentario agregado exitosamente", Toast.LENGTH_SHORT).show()
-                    
-                    // Regresar automáticamente después de comentar
                     findNavController().navigateUp()
                 }
-                
+
             } catch (e: Exception) {
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(requireContext(), "Error al agregar comentario: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -164,12 +160,12 @@ class DetalleNotificacionFragment : Fragment() {
         }
     }
 
-    private fun obtenerUsuarioActual(): String {
-        // Obtener usuario del MainActivity
+    // --- FUNCIÓN CORREGIDA ---
+    private fun obtenerUsuarioActual(): UsuarioEntity? {
         return try {
-            (requireActivity() as MainActivity).getCorreoUsuarioLogeado() ?: "Usuario Anónimo"
+            (requireActivity() as MainActivity).getUsuarioLogeado()
         } catch (e: Exception) {
-            "Usuario Anónimo"
+            null
         }
     }
 

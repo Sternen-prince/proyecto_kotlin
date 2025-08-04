@@ -9,19 +9,23 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.rre.databinding.ActivityMainBinding
+import com.example.rre.room.entities.UsuarioEntity
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private var correoUsuarioLogeado: String? = null
+    // 2. --- CAMBIO: La variable ahora es de tipo UsuarioEntity ---
+    private var usuarioLogeado: UsuarioEntity? = null
 
-    fun setCorreoUsuarioLogeado(correo: String) {
-        correoUsuarioLogeado = correo
+    // 3. --- CAMBIO: La función ahora recibe el objeto UsuarioEntity completo ---
+    fun setUsuarioLogeado(usuario: UsuarioEntity?) {
+        usuarioLogeado = usuario
     }
 
-    fun getCorreoUsuarioLogeado(): String? {
-        return correoUsuarioLogeado
+    // 4. --- CAMBIO: La función ahora devuelve el objeto UsuarioEntity completo ---
+    fun getUsuarioLogeado(): UsuarioEntity? {
+        return usuarioLogeado
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
 
         // Agregar listener específico para manejar la navegación del bottom navigation
         navView.setOnItemSelectedListener { item ->
@@ -74,8 +79,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Comprueba si el destino es el fragmento de login O el de registro
-            if (destination.id == R.id.loginFragment || destination.id == R.id.registerFragment) { // <-- AÑADE ESTA CONDICIÓN
+            if (destination.id == R.id.loginFragment || destination.id == R.id.registerFragment) {
                 navView.visibility = View.GONE
                 binding.fab.hide()
                 supportActionBar?.hide()
@@ -83,26 +87,21 @@ class MainActivity : AppCompatActivity() {
                 navView.visibility = View.VISIBLE
                 supportActionBar?.show()
 
-                // El resto de tu lógica para mostrar/ocultar el botón de "atrás" y el FAB
                 when (destination.id) {
                     R.id.navigation_home, R.id.navigation_notifications, R.id.navigation_dashboard -> {
                         supportActionBar?.setDisplayHomeAsUpEnabled(false)
                         binding.fab.show()
                     }
-
                     R.id.publicacionFragment, R.id.detalleNotificacionFragment -> {
                         supportActionBar?.setDisplayHomeAsUpEnabled(true)
                         binding.fab.hide()
                     }
-                    // Añade aquí cualquier otra lógica específica si es necesario
                 }
-
-                // Sincronizar el bottom navigation con el destino actual
+                // Esta parte de sincronizar el item seleccionado también la hace 'setupWithNavController',
+                // por lo que podría ser redundante, pero no es tan problemática como el listener anterior.
                 when (destination.id) {
                     R.id.navigation_home -> navView.selectedItemId = R.id.navigation_home
-                    R.id.navigation_notifications -> navView.selectedItemId =
-                        R.id.navigation_notifications
-
+                    R.id.navigation_notifications -> navView.selectedItemId = R.id.navigation_notifications
                     R.id.navigation_dashboard -> navView.selectedItemId = R.id.navigation_dashboard
                 }
             }
@@ -113,6 +112,4 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
-
-
 }
